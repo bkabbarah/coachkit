@@ -6,26 +6,64 @@
     
     <h2 class="text-xl font-semibold mb-4">Your Clients</h2>
     
-    {% for client in clients %}
-    <div 
-        class="bg-white p-4 rounded shadow mb-3 flex justify-between items-center cursor-pointer hover:bg-gray-50"
-        hx-get="/client/{{ loop.index0 }}"
-        hx-target="#client-detail"
-        hx-swap="innerHTML"
-    >
-        <div>
-            <span class="font-medium">{{ client.name }}</span>
-            <span class="text-gray-500 ml-2">— Last check-in: {{ client.last_checkin }}</span>
-        </div>
-        
-        {% if client.status == "at_risk" %}
-            <span class="bg-red-100 text-red-700 px-2 py-1 rounded text-sm">At Risk</span>
+    <div id="client-list">
+        {% if clients %}
+            {% for client in clients %}
+            <div 
+                class="bg-white p-4 rounded shadow mb-3 flex justify-between items-center cursor-pointer hover:bg-gray-50"
+                hx-get="/client/{{ client.id }}"
+                hx-target="#client-detail"
+                hx-swap="innerHTML"
+            >
+                <div>
+                    <span class="font-medium">{{ client.name }}</span>
+                    <span class="text-gray-500 ml-2">— Last check-in: {{ client.last_checkin }}</span>
+                </div>
+                
+                {% if client.status == "at_risk" %}
+                    <span class="bg-red-100 text-red-700 px-2 py-1 rounded text-sm">At Risk</span>
+                {% else %}
+                    <span class="bg-green-100 text-green-700 px-2 py-1 rounded text-sm">On Track</span>
+                {% endif %}
+            </div>
+            {% endfor %}
         {% else %}
-            <span class="bg-green-100 text-green-700 px-2 py-1 rounded text-sm">On Track</span>
+            <p class="text-gray-500" id="no-clients">No clients yet.</p>
         {% endif %}
     </div>
-    {% endfor %}
     
     <div id="client-detail" class="mt-6"></div>
+    
+    <div class="mt-8 bg-white p-6 rounded shadow">
+        <h3 class="text-lg font-semibold mb-4">Add New Client</h3>
+        <form 
+            hx-post="/client"
+            hx-target="#client-list"
+            hx-swap="beforeend"
+            hx-on::after-request="this.reset(); document.getElementById('no-clients')?.remove()"
+            class="flex gap-4"
+        >
+            <input 
+                type="text" 
+                name="name" 
+                placeholder="Name"
+                required
+                class="border rounded px-3 py-2 flex-1"
+            >
+            <input 
+                type="email" 
+                name="email" 
+                placeholder="Email"
+                required
+                class="border rounded px-3 py-2 flex-1"
+            >
+            <button 
+                type="submit"
+                class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            >
+                Add Client
+            </button>
+        </form>
+    </div>
 </div>
 {% endblock %}
