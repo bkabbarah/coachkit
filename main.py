@@ -2,7 +2,9 @@ from fastapi import FastAPI, Request, Depends, Form
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from sqlalchemy import select
+from models import Base, Client, CheckIn
 
 from database import engine, get_db
 from models import Base, Client
@@ -28,7 +30,7 @@ async def home(request: Request, db: AsyncSession = Depends(get_db)):
 
 @app.get("/client/{client_id}")
 async def get_client(request: Request, client_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Client).where(Client.id == client_id))
+    result = await db.execute(select(Client).where(Client.id == client_id).options(selectinload(Client.checkins)))
     client = result.scalar_one_or_none()
     
     return templates.TemplateResponse("partials/client_detail.html", {
@@ -51,4 +53,28 @@ async def create_client(
     return templates.TemplateResponse("partials/client_card.html", {
         "request": request,
         "client": client
+    })
+
+@app.post("/client/{client_id}/checkin")
+async def create_checkin(
+    request: Request,
+    client_id = int,
+    note: str = Form(""),
+    weight: int = Form(None),
+    db: AsyncSession = Depends(get_db)
+):
+    checkin = CheckIn(client_id=client_id, note=note, weight=weight)
+    db.add(checkin)
+
+    # update client's last_checkin time
+    result = await db.execute(select(Client).where(Client.id == client_id))
+    client = result.scalar_one()
+    client.last_checkin = checkin.created_at
+
+    await db.commit()
+    await db.refresh(checkin)
+
+    return templates.TemplateResponse("partials/checkin_item.html", {
+        "request": request,
+        "checkin": checkin
     })

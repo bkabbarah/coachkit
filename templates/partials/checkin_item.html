@@ -1,0 +1,7 @@
+<div class="border-l-4 border-blue-400 pl-3 py-2 mb-2">
+    <p class="text-sm text-gray-500">{{ checkin.created_at.strftime('%b %d, %Y at %I:%M %p') }}</p>
+    <p>{{ checkin.note or 'No notes' }}</p>
+    {% if checkin.weight %}
+        <p class="text-sm text-gray-600">Weight: {{ checkin.weight }} lbs</p>
+    {% endif %}
+</div>

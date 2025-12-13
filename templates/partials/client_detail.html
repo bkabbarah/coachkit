@@ -1,11 +1,58 @@
-<div class="bg-blue-50 p-4 rounded border border-blue-200">
-    <h3 class="font-bold text-lg">{{ client.name }}</h3>
-    <p class="text-gray-600">Last check-in: {{ client.last_checkin }}</p>
-    <p class="text-gray-600">Status: {{ client.status }}</p>
-    <button 
-        class="mt-2 text-blue-600 hover:underline"
-        hx-get="/"
-        hx-target="#client-detail"
-        hx-swap="innerHTML"
-    >Close</button>
+<div class="bg-white p-6 rounded shadow">
+    <div class="flex justify-between items-start mb-4">
+        <div>
+            <h3 class="font-bold text-xl">{{ client.name }}</h3>
+            <p class="text-gray-500">{{ client.email }}</p>
+        </div>
+        {% if client.status == "at_risk" %}
+            <span class="bg-red-100 text-red-700 px-2 py-1 rounded text-sm">At Risk</span>
+        {% else %}
+            <span class="bg-green-100 text-green-700 px-2 py-1 rounded text-sm">On Track</span>
+        {% endif %}
+    </div>
+    
+    <h4 class="font-semibold mb-2 mt-6">Add Check-In</h4>
+    <form 
+        hx-post="/client/{{ client.id }}/checkin"
+        hx-target="#checkins-list"
+        hx-swap="afterbegin"
+        hx-on::after-request="this.reset()"
+        class="flex gap-2 mb-4"
+    >
+        <input 
+            type="text" 
+            name="note" 
+            placeholder="Notes (e.g., 'Great session, hit PR')"
+            class="border rounded px-3 py-2 flex-1"
+        >
+        <input 
+            type="number" 
+            name="weight" 
+            placeholder="Weight (lbs)"
+            class="border rounded px-3 py-2 w-32"
+        >
+        <button 
+            type="submit"
+            class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+        >
+            Add
+        </button>
+    </form>
+    
+    <h4 class="font-semibold mb-2">Check-In History</h4>
+    <div id="checkins-list">
+        {% if client.checkins %}
+            {% for checkin in client.checkins %}
+            <div class="border-l-4 border-blue-400 pl-3 py-2 mb-2">
+                <p class="text-sm text-gray-500">{{ checkin.created_at.strftime('%b %d, %Y at %I:%M %p') }}</p>
+                <p>{{ checkin.note or 'No notes' }}</p>
+                {% if checkin.weight %}
+                    <p class="text-sm text-gray-600">Weight: {{ checkin.weight }} lbs</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <p class="text-gray-500 text-sm">No check-ins yet.</p>
+        {% endif %}
+    </div>
 </div>
