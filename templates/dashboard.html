@@ -7,7 +7,12 @@
     <h2 class="text-xl font-semibold mb-4">Your Clients</h2>
     
     {% for client in clients %}
-    <div class="bg-white p-4 rounded shadow mb-3 flex justify-between items-center">
+    <div 
+        class="bg-white p-4 rounded shadow mb-3 flex justify-between items-center cursor-pointer hover:bg-gray-50"
+        hx-get="/client/{{ loop.index0 }}"
+        hx-target="#client-detail"
+        hx-swap="innerHTML"
+    >
         <div>
             <span class="font-medium">{{ client.name }}</span>
             <span class="text-gray-500 ml-2">— Last check-in: {{ client.last_checkin }}</span>
@@ -20,5 +25,7 @@
         {% endif %}
     </div>
     {% endfor %}
+    
+    <div id="client-detail" class="mt-6"></div>
 </div>
 {% endblock %}

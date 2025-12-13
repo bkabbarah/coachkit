@@ -18,3 +18,11 @@ def home(request: Request):
         "coach_name": "Bashar",
         "clients": clients
     })
+
+@app.get("/client/{client_id}")
+def get_client(request: Request, client_id: int):
+    client = clients[client_id]
+    return templates.TemplateResponse("partials/client_detail.html", {
+        "request": request,
+        "client": client
+    })
