@@ -28,6 +28,12 @@ async def home(request: Request, db: AsyncSession = Depends(get_db)):
         "clients": clients
     })
 
+@app.get("/client/new")
+async def new_client_form(request: Request):
+    return templates.TemplateResponse("partials/client_form.html", {
+        "request": request
+    })
+
 @app.get("/client/{client_id}")
 async def get_client(request: Request, client_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Client).where(Client.id == client_id).options(selectinload(Client.checkins)))
@@ -48,12 +54,19 @@ async def create_client(
     client = Client(name=name, email=email)
     db.add(client)
     await db.commit()
-    await db.refresh(client)
 
-    return templates.TemplateResponse("partials/client_card.html", {
+    result = await db.execute(
+        select(Client).where(Client.id == client.id).options(selectinload(Client.checkins))
+    )
+
+    client = result.scalar_one()
+
+    response = templates.TemplateResponse("partials/client_detail.html", {
         "request": request,
         "client": client
     })
+    response.headers["HX-Trigger"] = "clientListChanged"
+    return response
 
 @app.post("/client/{client_id}/checkin")
 async def create_checkin(
@@ -78,3 +91,16 @@ async def create_checkin(
         "request": request,
         "checkin": checkin
     })
+
+@app.get("/clients/search")
+async def search_clients(request: Request, q: str = "", db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(Client).where(Client.name.ilike(f"%{q}%"))
+    )
+    clients = result.scalars().all()
+
+    return templates.TemplateResponse("partials/client_list.html", {
+        "request": request,
+        "clients": clients
+    })
+

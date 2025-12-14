@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Float
 from sqlalchemy.orm import DeclarativeBase, relationship
-from datetime import datetime
+from datetime import datetime, timedelta
 
 class Base(DeclarativeBase):
     pass
@@ -15,6 +15,15 @@ class Client(Base):
     status = Column(String, default="on_track")
 
     checkins = relationship("CheckIn", back_populates="client", order_by="desc(CheckIn.created_at)")
+
+    def days_since_checkin(self):
+        if not self.last_checkin:
+            return 999
+        delta = datetime.utcnow() - self.last_checkin
+        return delta.days
+    
+    def is_at_risk(self, threshold_days=5):
+        return self.days_since_checkin() >= threshold_days
 
 class CheckIn(Base):
     __tablename__ = "checkins"
