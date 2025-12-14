@@ -14,7 +14,7 @@ class Client(Base):
     last_checkin = Column(DateTime, default=datetime.utcnow)
     status = Column(String, default="on_track")
 
-    checkins = relationship("CheckIn", back_populates="client", order_by="desc(CheckIn.created_at)")
+    checkins = relationship("CheckIn", back_populates="client", order_by="desc(CheckIn.created_at)", cascade="all, delete-orphan")
 
     def days_since_checkin(self):
         if not self.last_checkin:

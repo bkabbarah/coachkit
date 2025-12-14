@@ -104,3 +104,35 @@ async def search_clients(request: Request, q: str = "", db: AsyncSession = Depen
         "clients": clients
     })
 
+@app.delete("/client/{client_id}")
+async def delete_client(
+    request: Request,
+    client_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(select(Client).where(Client.id == client_id))
+    client = result.scalar_one_or_none()
+
+    if client:
+        await db.delete(client)
+        await db.commit()
+    
+    response = templates.TemplateResponse("partials/client_placeholder.html", {
+        "request": request
+    })
+    response.headers["HX-Trigger"] = "clientListChanged"
+    return response
+    
+@app.get("/client/{client_id}/delete-modal")
+async def delete_modal(request: Request, client_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Client).where(Client.id == client_id))
+    client = result.scalar_one_or_none()
+    
+    return templates.TemplateResponse("partials/delete_modal.html", {
+        "request": request,
+        "client": client
+    })
+
+@app.get("/modal/close")
+async def close_modal():
+    return HTMLResponse("")

@@ -1,0 +1,31 @@
+<div class="fixed inset-0 z-50 flex items-center justify-center">
+    <div 
+        class="absolute inset-0 bg-black bg-opacity-50"
+        hx-get="/modal/close"
+        hx-target="#modal-container"
+        hx-swap="innerHTML"
+    ></div>
+    <div class="relative bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+        <h3 class="text-lg font-bold mb-2">Delete {{ client.name }}?</h3>
+        <p class="text-gray-600 mb-6">This will delete all their check-ins and cannot be undone.</p>
+        <div class="flex gap-3 justify-end">
+            <button
+                hx-get="/modal/close"
+                hx-target="#modal-container"
+                hx-swap="innerHTML"
+                class="px-4 py-2 border rounded hover:bg-gray-50"
+            >
+                Cancel
+            </button>
+            <button
+                hx-delete="/client/{{ client.id }}"
+                hx-target="#client-detail"
+                hx-swap="innerHTML"
+                hx-on::after-request="document.getElementById('modal-container').innerHTML = ''"
+                class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+            >
+                Delete
+            </button>
+        </div>
+    </div>
+</div>
