@@ -1,3 +1,10 @@
+<div 
+    hx-get="/client/{{ client.id }}/analytics"
+    hx-target="#analytics-content"
+    hx-trigger="load, checkinAdded from:body"
+    hx-swap="innerHTML"
+></div>
+
 <div class="bg-white p-6 rounded shadow">
     <div class="flex justify-between items-start mb-4">
         <div>
@@ -139,6 +146,16 @@
                     <p>{{ checkin.note or 'No notes' }}</p>
                     {% if checkin.weight %}
                         <p class="text-sm text-gray-600">Weight: {{ checkin.weight }} lbs</p>
+                    {% endif %}
+                    {% if checkin.photo %}
+                        <img 
+                            src="/static/uploads/{{ checkin.photo }}" 
+                            alt="Progress photo"
+                            class="mt-2 rounded max-w-xs cursor-pointer hover:opacity-90"
+                            hx-get="/checkin/{{ checkin.id }}/photo-view"
+                            hx-target="#modal-container"
+                            hx-swap="innerHTML"
+                        >
                     {% endif %}
                 </div>
                 {% endfor %}

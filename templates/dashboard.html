@@ -18,9 +18,7 @@
             >
         </div>
         
-        <div 
-            id="client-list" 
-            class="flex-1 overflow-y-auto"
+        <div id="client-list" class="flex-1 overflow-y-auto"
             hx-get="/clients/search"
             hx-trigger="clientListChanged from:body"
             hx-vals='{"q": ""}'
@@ -41,6 +39,20 @@
                 {% endif %}
             </div>
             {% endfor %}
+        </div>
+        
+        <!-- Analytics Tray -->
+        <div id="analytics-tray" class="border-t">
+            <div 
+                hx-get="/analytics/empty"
+                hx-trigger="load"
+                hx-swap="innerHTML"
+                id="analytics-content"
+            >
+                <div class="p-3 text-center text-gray-400 text-sm">
+                    Select a client to view analytics
+                </div>
+            </div>
         </div>
         
         <div class="p-4 border-t">

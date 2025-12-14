@@ -217,3 +217,45 @@ async def view_photo(request: Request, filename: str):
         "request": request,
         "filename": filename
     })
+
+@app.get("/analytics/empty")
+async def analytics_empty(request: Request):
+    return templates.TemplateResponse("partials/analytics_empty.html", {
+        "request": request
+    })
+
+@app.get("/client/{client_id}/analytics")
+async def client_analytics(request: Request, client_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(Client).where(Client.id == client_id).options(selectinload(Client.checkins))
+    )
+    client = result.scalar_one_or_none()
+    
+    return templates.TemplateResponse("partials/analytics_tray.html", {
+        "request": request,
+        "client": client
+    })
+
+@app.get("/client/{client_id}/chart-modal")
+async def chart_modal(request: Request, client_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(Client).where(Client.id == client_id).options(selectinload(Client.checkins))
+    )
+    client = result.scalar_one_or_none()
+    
+    return templates.TemplateResponse("partials/chart_modal.html", {
+        "request": request,
+        "client": client
+    })
+
+@app.get("/checkin/{checkin_id}/photo-view")
+async def photo_view(request: Request, checkin_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(CheckIn).where(CheckIn.id == checkin_id).options(selectinload(CheckIn.client))
+    )
+    checkin = result.scalar_one_or_none()
+    
+    return templates.TemplateResponse("partials/photo_view.html", {
+        "request": request,
+        "checkin": checkin
+    })

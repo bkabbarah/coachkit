@@ -9,7 +9,7 @@
             src="/static/uploads/{{ checkin.photo }}" 
             alt="Progress photo"
             class="mt-2 rounded max-w-xs cursor-pointer hover:opacity-90"
-            hx-get="/photo/{{ checkin.photo }}"
+            hx-get="/checkin/{{ checkin.id }}/photo-view"
             hx-target="#modal-container"
             hx-swap="innerHTML"
         >

@@ -1,0 +1,63 @@
+<div class="fixed inset-0 z-50 flex">
+    <!-- Backdrop -->
+    <div 
+        class="absolute inset-0 bg-black bg-opacity-75"
+        hx-get="/modal/close"
+        hx-target="#modal-container"
+        hx-swap="innerHTML"
+    ></div>
+    
+    <!-- Content -->
+    <div class="relative flex w-full h-full items-center justify-center p-4">
+        <!-- Photo -->
+        <div class="relative max-w-2xl max-h-[80vh]">
+            <img 
+                src="/static/uploads/{{ checkin.photo }}" 
+                alt="Progress photo"
+                class="max-w-full max-h-[80vh] rounded-lg shadow-2xl"
+            >
+        </div>
+        
+        <!-- Metadata Panel -->
+        <div class="absolute right-4 top-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl p-4 w-64">
+            <div class="flex justify-between items-start mb-3">
+                <h3 class="font-bold">Check-In Details</h3>
+                <button
+                    hx-get="/modal/close"
+                    hx-target="#modal-container"
+                    hx-swap="innerHTML"
+                    class="text-gray-500 hover:text-gray-700"
+                >
+                    ✕
+                </button>
+            </div>
+            
+            <div class="space-y-3 text-sm">
+                <div>
+                    <p class="text-gray-500">Date</p>
+                    <p class="font-medium">{{ checkin.created_at.strftime('%B %d, %Y') }}</p>
+                    <p class="text-gray-500">{{ checkin.created_at.strftime('%I:%M %p') }}</p>
+                </div>
+                
+                {% if checkin.weight %}
+                <div>
+                    <p class="text-gray-500">Weight</p>
+                    <p class="font-medium">{{ checkin.weight }} lbs</p>
+                </div>
+                {% endif %}
+                
+                {% if checkin.note %}
+                <div>
+                    <p class="text-gray-500">Notes</p>
+                    <p class="font-medium">{{ checkin.note }}</p>
+                </div>
+                {% endif %}
+                
+                <div class="pt-2 border-t">
+                    <p class="text-gray-500">Client</p>
+                    <p class="font-medium">{{ checkin.client.name }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

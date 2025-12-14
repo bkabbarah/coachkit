@@ -1,0 +1,159 @@
+<div>
+    <!-- Tray Header -->
+    <button 
+        onclick="document.getElementById('tray-body').classList.toggle('hidden'); document.getElementById('tray-arrow').classList.toggle('rotate-180');"
+        class="w-full px-3 py-2 flex items-center justify-between hover:bg-gray-50 border-b"
+    >
+        <span class="font-medium text-sm">{{ client.name }} Analytics</span>
+        <svg id="tray-arrow" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+        </svg>
+    </button>
+    
+    <!-- Tray Body -->
+    <div id="tray-body" class="hidden">
+        <!-- Tabs -->
+        <div class="border-b px-2">
+            <nav class="flex gap-2">
+                <button onclick="showTab('weight')" id="tab-weight" class="py-1.5 text-xs border-b-2 border-blue-600 text-blue-600">Weight</button>
+                <button onclick="showTab('photos')" id="tab-photos" class="py-1.5 text-xs border-b-2 border-transparent text-gray-500 hover:text-gray-700">Photos</button>
+                <button onclick="showTab('stats')" id="tab-stats" class="py-1.5 text-xs border-b-2 border-transparent text-gray-500 hover:text-gray-700">Stats</button>
+            </nav>
+        </div>
+        
+        <!-- Tab Content -->
+        <div class="p-2 h-40 overflow-auto">
+            <!-- Weight Tab -->
+            <div id="content-weight">
+                {% set weight_checkins = client.checkins|selectattr('weight')|list %}
+                {% if weight_checkins %}
+                    <div 
+                        class="cursor-pointer hover:bg-gray-50 rounded"
+                        hx-get="/client/{{ client.id }}/chart-modal"
+                        hx-target="#modal-container"
+                        hx-swap="innerHTML"
+                        title="Click to expand"
+                    >
+                        <canvas id="weightChart" height="120"></canvas>
+                    </div>
+                    <p class="text-xs text-gray-400 text-center mt-1">Click to expand</p>
+                    <script>
+                        (function() {
+                            const existing = Chart.getChart('weightChart');
+                            if (existing) existing.destroy();
+                            
+                            const ctx = document.getElementById('weightChart').getContext('2d');
+                            
+                            const data = [
+                                {% for checkin in client.checkins|reverse %}
+                                    {% if checkin.weight %}
+                                    { x: '{{ checkin.created_at.strftime("%b %d") }}', y: {{ checkin.weight }} },
+                                    {% endif %}
+                                {% endfor %}
+                            ];
+                            
+                            const goalWeight = {{ client.goal_weight or 'null' }};
+                            
+                            new Chart(ctx, {
+                                type: 'line',
+                                data: {
+                                    labels: data.map(d => d.x),
+                                    datasets: [
+                                        {
+                                            label: 'Weight',
+                                            data: data.map(d => d.y),
+                                            borderColor: 'rgb(59, 130, 246)',
+                                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                            fill: true,
+                                            tension: 0.3,
+                                            pointRadius: 2
+                                        },
+                                        goalWeight ? {
+                                            label: 'Goal',
+                                            data: data.map(() => goalWeight),
+                                            borderColor: 'rgb(34, 197, 94)',
+                                            borderDash: [5, 5],
+                                            pointRadius: 0,
+                                            fill: false
+                                        } : null
+                                    ].filter(Boolean)
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: { display: false }
+                                    },
+                                    scales: {
+                                        y: { beginAtZero: false },
+                                        x: { ticks: { font: { size: 10 } } }
+                                    }
+                                }
+                            });
+                        })();
+                    </script>
+                {% else %}
+                    <p class="text-gray-500 text-xs">No weight data yet.</p>
+                {% endif %}
+            </div>
+            
+            <!-- Photos Tab -->
+            <div id="content-photos" class="hidden">
+                {% set photos = client.checkins|selectattr('photo')|list %}
+                {% if photos %}
+                    <div class="grid grid-cols-3 gap-1">
+                        {% for checkin in client.checkins %}
+                            {% if checkin.photo %}
+                            <div 
+                                class="relative cursor-pointer"
+                                hx-get="/checkin/{{ checkin.id }}/photo-view"
+                                hx-target="#modal-container"
+                                hx-swap="innerHTML"
+                            >
+                                <img 
+                                    src="/static/uploads/{{ checkin.photo }}" 
+                                    alt="Progress"
+                                    class="w-full h-16 object-cover rounded hover:opacity-90"
+                                >
+                                <span class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 rounded-b text-center">
+                                    {{ checkin.created_at.strftime('%b %d') }}
+                                </span>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-gray-500 text-xs">No photos yet.</p>
+                {% endif %}
+            </div>
+            
+            <!-- Stats Tab -->
+            <div id="content-stats" class="hidden">
+                <div class="grid grid-cols-2 gap-2 text-center">
+                    <div class="bg-gray-50 rounded p-2">
+                        <p class="text-lg font-bold">{{ client.checkins|length }}</p>
+                        <p class="text-xs text-gray-500">Check-ins</p>
+                    </div>
+                    <div class="bg-gray-50 rounded p-2">
+                        <p class="text-lg font-bold">{{ client.days_since_checkin() }}</p>
+                        <p class="text-xs text-gray-500">Days Since Last</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showTab(tabName) {
+    document.querySelectorAll('[id^="content-"]').forEach(el => el.classList.add('hidden'));
+    document.querySelectorAll('[id^="tab-"]').forEach(el => {
+        el.classList.remove('border-blue-600', 'text-blue-600');
+        el.classList.add('border-transparent', 'text-gray-500');
+    });
+    document.getElementById('content-' + tabName).classList.remove('hidden');
+    const tab = document.getElementById('tab-' + tabName);
+    tab.classList.remove('border-transparent', 'text-gray-500');
+    tab.classList.add('border-blue-600', 'text-blue-600');
+}
+</script>
