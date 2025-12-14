@@ -4,4 +4,14 @@
     {% if checkin.weight %}
         <p class="text-sm text-gray-600">Weight: {{ checkin.weight }} lbs</p>
     {% endif %}
+    {% if checkin.photo %}
+        <img 
+            src="/static/uploads/{{ checkin.photo }}" 
+            alt="Progress photo"
+            class="mt-2 rounded max-w-xs cursor-pointer hover:opacity-90"
+            hx-get="/photo/{{ checkin.photo }}"
+            hx-target="#modal-container"
+            hx-swap="innerHTML"
+        >
+    {% endif %}
 </div>

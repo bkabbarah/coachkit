@@ -96,27 +96,38 @@
             hx-target="#checkins-list"
             hx-swap="afterbegin"
             hx-on::after-request="this.reset()"
-            class="flex gap-2 mb-4"
+            hx-encoding="multipart/form-data"
+            class="space-y-3 mb-4"
         >
-            <input 
-                type="text" 
-                name="note" 
-                placeholder="Notes (e.g., 'Great session, hit PR')"
-                class="border rounded px-3 py-2 flex-1"
-            >
-            <input 
-                type="number"
-                step="0.1"
-                name="weight" 
-                placeholder="Weight (lbs)"
-                class="border rounded px-3 py-2 w-32"
-            >
-            <button 
-                type="submit"
-                class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-            >
-                Add
-            </button>
+            <div class="flex gap-2">
+                <input 
+                    type="text" 
+                    name="note" 
+                    placeholder="Notes (e.g., 'Great session, hit PR')"
+                    class="border rounded px-3 py-2 flex-1"
+                >
+                <input 
+                    type="number"
+                    step="0.1"
+                    name="weight" 
+                    placeholder="Weight (lbs)"
+                    class="border rounded px-3 py-2 w-32"
+                >
+            </div>
+            <div class="flex gap-2 items-center">
+                <input 
+                    type="file" 
+                    name="photo" 
+                    accept="image/*"
+                    class="text-sm"
+                >
+                <button 
+                    type="submit"
+                    class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                >
+                    Add Check-In
+                </button>
+            </div>
         </form>
         
         <h4 class="font-semibold mb-2">Check-In History</h4>

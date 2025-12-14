@@ -1,15 +1,19 @@
-from fastapi import FastAPI, Request, Depends, Form
+from fastapi import FastAPI, Request, Depends, Form, File, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlalchemy import select
 from models import Base, Client, CheckIn
+import uuid
+import os
 
 from database import engine, get_db
 from models import Base, Client
 
 app = FastAPI()
+app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 @app.on_event("startup")
@@ -74,9 +78,28 @@ async def create_checkin(
     client_id: int,
     note: str = Form(""),
     weight: float = Form(None),
+    photo: UploadFile = File(None),
     db: AsyncSession = Depends(get_db)
-):
-    checkin = CheckIn(client_id=client_id, note=note, weight=weight)
+    ):
+    photo_filename = None
+    
+    if photo and photo.filename:
+        # Generate unique filename
+        ext = os.path.splitext(photo.filename)[1]
+        photo_filename = f"{uuid.uuid4()}{ext}"
+        
+        # Save file
+        file_path = f"static/uploads/{photo_filename}"
+        with open(file_path, "wb") as f:
+            content = await photo.read()
+            f.write(content)
+    
+    checkin = CheckIn(
+        client_id=client_id, 
+        note=note, 
+        weight=weight,
+        photo=photo_filename
+    )
     db.add(checkin)
 
     # update client's last_checkin time
@@ -186,4 +209,11 @@ async def update_goal(
     return templates.TemplateResponse("partials/goal_display.html", {
         "request": request,
         "client": client
+    })
+
+@app.get("/photo/{filename}")
+async def view_photo(request: Request, filename: str):
+    return templates.TemplateResponse("partials/photo_modal.html", {
+        "request": request,
+        "filename": filename
     })

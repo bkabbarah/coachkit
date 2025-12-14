@@ -82,6 +82,7 @@ class CheckIn(Base):
     client_id = Column(Integer, ForeignKey("clients.id"), nullable=False)
     note = Column(Text)
     weight = Column(Float)
+    photo = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     client = relationship("Client", back_populates="checkins")
