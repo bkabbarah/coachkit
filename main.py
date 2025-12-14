@@ -71,9 +71,9 @@ async def create_client(
 @app.post("/client/{client_id}/checkin")
 async def create_checkin(
     request: Request,
-    client_id = int,
+    client_id: int,
     note: str = Form(""),
-    weight: int = Form(None),
+    weight: float = Form(None),
     db: AsyncSession = Depends(get_db)
 ):
     checkin = CheckIn(client_id=client_id, note=note, weight=weight)
@@ -87,10 +87,14 @@ async def create_checkin(
     await db.commit()
     await db.refresh(checkin)
 
-    return templates.TemplateResponse("partials/checkin_item.html", {
+    response = templates.TemplateResponse("partials/checkin_item.html", {
         "request": request,
         "checkin": checkin
     })
+
+    response.headers["HX-Trigger"] = "checkinAdded"
+    return response
+
 
 @app.get("/clients/search")
 async def search_clients(request: Request, q: str = "", db: AsyncSession = Depends(get_db)):
@@ -136,3 +140,50 @@ async def delete_modal(request: Request, client_id: int, db: AsyncSession = Depe
 @app.get("/modal/close")
 async def close_modal():
     return HTMLResponse("")
+
+@app.get("/client/{client_id}/edit-goal")
+async def edit_goal_form(request: Request, client_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(Client).where(Client.id == client_id)
+    )
+    client = result.scalar_one_or_none()
+    
+    return templates.TemplateResponse("partials/edit_goal.html", {
+        "request": request,
+        "client": client
+    })
+
+@app.get("/client/{client_id}/goal")
+async def get_goal(request: Request, client_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(Client).where(Client.id == client_id).options(selectinload(Client.checkins))
+    )
+    client = result.scalar_one_or_none()
+    
+    return templates.TemplateResponse("partials/goal_display.html", {
+        "request": request,
+        "client": client
+    })
+
+@app.put("/client/{client_id}/goal")
+async def update_goal(
+    request: Request,
+    client_id: int,
+    goal_weight: float = Form(None),
+    notes: str = Form(""),
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(
+        select(Client).where(Client.id == client_id).options(selectinload(Client.checkins))
+    )
+    client = result.scalar_one_or_none()
+    
+    client.goal_weight = goal_weight
+    client.notes = notes
+    await db.commit()
+    await db.refresh(client)
+    
+    return templates.TemplateResponse("partials/goal_display.html", {
+        "request": request,
+        "client": client
+    })

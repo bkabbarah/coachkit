@@ -1,0 +1,47 @@
+{% if client.goal_weight %}
+    <div class="flex gap-8 mb-2">
+        <div>
+            <p class="text-sm text-gray-500">Target</p>
+            <p class="font-medium">{{ client.goal_weight }} lbs</p>
+        </div>
+        <div>
+            <p class="text-sm text-gray-500">Current</p>
+            <p class="font-medium">{{ client.current_weight() or '—' }} lbs</p>
+        </div>
+        {% if client.goal_progress() is not none %}
+        {% set progress = client.goal_progress() %}
+        <div>
+            <p class="text-sm text-gray-500">Progress</p>
+            <div class="flex items-center gap-2">
+                <div class="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
+                    {% if progress < 0 %}
+                        <div class="h-2 bg-red-500 rounded-full" style="width: {{ [progress|abs, 100]|min }}%"></div>
+                    {% elif progress > 100 %}
+                        <div class="h-2 bg-yellow-500 rounded-full" style="width: 100%"></div>
+                    {% else %}
+                        <div class="h-2 bg-green-500 rounded-full" style="width: {{ progress }}%"></div>
+                    {% endif %}
+                </div>
+                {% if progress < 0 %}
+                    <span class="text-sm text-red-600">{{ progress|int }}%</span>
+                {% elif progress > 100 %}
+                    <span class="text-sm text-yellow-600">{{ progress|int }}%</span>
+                {% else %}
+                    <span class="text-sm">{{ progress|int }}%</span>
+                {% endif %}
+            </div>
+            {% if progress < 0 %}
+                <p class="text-xs text-red-600 mt-1">Moving away from goal</p>
+            {% elif progress > 100 %}
+                <p class="text-xs text-yellow-600 mt-1">Passed goal — check in with client</p>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+{% else %}
+    <p class="text-gray-500 text-sm">No goal set</p>
+{% endif %}
+
+{% if client.notes %}
+    <p class="text-gray-700 mt-2">{{ client.notes }}</p>
+{% endif %}
