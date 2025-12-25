@@ -1,0 +1,22 @@
+<div class="bg-blue-50 border border-blue-200 rounded p-4">
+    <div class="flex justify-between items-start mb-2">
+        <h4 class="font-semibold text-blue-900">Suggested Message</h4>
+        <button
+            onclick="navigator.clipboard.writeText(document.getElementById('message-text').innerText); this.innerText = 'Copied!'; setTimeout(() => this.innerText = 'Copy', 2000)"
+            class="text-sm text-blue-600 hover:text-blue-800"
+        >
+            Copy
+        </button>
+    </div>
+    <p id="message-text" class="text-gray-800">{{ message }}</p>
+    <div class="mt-3 flex gap-2">
+        <button
+            hx-post="/client/{{ client.id }}/generate-message"
+            hx-target="#message-container"
+            hx-swap="innerHTML"
+            class="text-sm text-blue-600 hover:text-blue-800"
+        >
+            ↻ Regenerate
+        </button>
+    </div>
+</div>
