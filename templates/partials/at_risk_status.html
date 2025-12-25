@@ -1,0 +1,17 @@
+{% if client.is_at_risk() %}
+<div class="bg-red-50 border border-red-200 rounded p-4 mb-4">
+    <div class="flex justify-between items-center mb-2">
+        <h4 class="font-semibold text-red-700">⚠️ Client At Risk</h4>
+        <button
+            hx-post="/client/{{ client.id }}/generate-message"
+            hx-target="#message-container"
+            hx-swap="innerHTML"
+            class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
+        >
+            Generate Re-engagement Message
+        </button>
+    </div>
+    <p class="text-sm text-gray-600 mb-3">This client hasn't checked in for {{ client.days_since_checkin() }} days.</p>
+    <div id="message-container"></div>
+</div>
+{% endif %}

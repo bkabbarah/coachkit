@@ -9,6 +9,9 @@ from models import Base, Client, CheckIn
 import uuid
 import os
 from ai_service import generate_reengagement_message
+from import_service import read_spreadsheet, analyze_columns, preview_import, parse_spreadsheet_for_import
+import tempfile
+import os as os_module
 
 from database import engine, get_db
 from models import Base, Client
@@ -286,4 +289,109 @@ async def generate_message(
         "request": request,
         "client": client,
         "message": message
+    })
+
+@app.get("/import")
+async def import_page(request: Request):
+    return templates.TemplateResponse("partials/import_modal.html", {
+        "request": request
+    })
+
+@app.post("/import/analyze")
+async def analyze_import(
+    request: Request,
+    file: UploadFile = File(...)
+):
+    # Save uploaded file temporarily
+    ext = os.path.splitext(file.filename)[1]
+    with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
+        content = await file.read()
+        tmp.write(content)
+        tmp_path = tmp.name
+    
+    try:
+        # Read and analyze
+        df = read_spreadsheet(tmp_path)
+        mapping = analyze_columns(df)
+        preview = preview_import(df, mapping)
+        
+        # Store temp file path and mapping in session (we'll use a hidden field)
+        return templates.TemplateResponse("partials/import_preview.html", {
+            "request": request,
+            "mapping": mapping,
+            "preview": preview,
+            "total_rows": len(df),
+            "tmp_path": tmp_path,
+            "filename": file.filename
+        })
+    except Exception as e:
+        os_module.unlink(tmp_path)
+        return templates.TemplateResponse("partials/import_error.html", {
+            "request": request,
+            "error": str(e)
+        })
+
+@app.post("/import/confirm")
+async def confirm_import(
+    request: Request,
+    tmp_path: str = Form(...),
+    mapping: str = Form(...),
+    db: AsyncSession = Depends(get_db)
+):
+    import json
+    
+    try:
+        mapping_dict = json.loads(mapping)
+        df = read_spreadsheet(tmp_path)
+        records = parse_spreadsheet_for_import(df, mapping_dict)
+        
+        imported_count = 0
+        for record in records:
+            client = Client(
+                name=record["name"],
+                email=record.get("email"),
+                goal_weight=record.get("goal_weight"),
+                notes=record.get("notes")
+            )
+            db.add(client)
+            imported_count += 1
+            
+            # If there's a weight, create an initial check-in
+            if record.get("weight"):
+                await db.flush()  # Get the client ID
+                checkin = CheckIn(
+                    client_id=client.id,
+                    weight=record["weight"],
+                    note="Imported from spreadsheet"
+                )
+                db.add(checkin)
+        
+        await db.commit()
+        
+        # Clean up temp file
+        os_module.unlink(tmp_path)
+        
+        response = templates.TemplateResponse("partials/import_success.html", {
+            "request": request,
+            "count": imported_count
+        })
+        response.headers["HX-Trigger"] = "clientListChanged"
+        return response
+        
+    except Exception as e:
+        return templates.TemplateResponse("partials/import_error.html", {
+            "request": request,
+            "error": str(e)
+        })
+
+@app.get("/client/{client_id}/at-risk-status")
+async def at_risk_status(request: Request, client_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(Client).where(Client.id == client_id).options(selectinload(Client.checkins))
+    )
+    client = result.scalar_one_or_none()
+    
+    return templates.TemplateResponse("partials/at_risk_status.html", {
+        "request": request,
+        "client": client
     })
